@@ -1,48 +1,27 @@
 package pages;
 
-import org.openqa.selenium.Alert;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.FindBy;
-import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.By;
+import utilities.ConfigReader;
 
 public class LoginPage extends BasePage {
 
-    // 1. Element Tanımlamaları (Locators)
-    @FindBy(id = "loginusername")
-    public WebElement usernameInput;
+    // 1. Element Locator'ları (By objeleri)
+    private final By loginLink = By.id("login2");
+    private final By usernameField = By.id("loginusername");
+    private final By passwordField = By.id("loginpassword");
+    private final By loginButton = By.xpath("//button[text()='Log in']");
 
-    @FindBy(id = "loginpassword")
-    public WebElement passwordInput;
-
-    @FindBy(xpath = "//button[text()='Log in']")
-    public WebElement loginButton;
-
-    // 2. Constructor (BasePage'den driver'ı devralır)
-    public LoginPage(WebDriver driver) {
-        super(driver);
+    // 2. Constructor (Yapıcı Metod)
+    public LoginPage() {
+        super(); // BasePage'deki PageFactory ve Wait kurulumunu tetikler
     }
 
-    // 3. Login Aksiyonu
-    public void login(String user, String pass) {
-        // Kullanıcı adı ve şifre gönderimi
-        sendKeys(usernameInput, user);
-        sendKeys(passwordInput, pass);
-
-        // Login butonuna tıkla
+    // 3. Sayfa Aksiyonları (Metodlar)
+    public void loginAction() {
+        // Verileri , ConfigReader ile dosyadan çekiyoruz
+        click(loginLink);
+        sendKeys(usernameField, ConfigReader.getProperty("username"));
+        sendKeys(passwordField, ConfigReader.getProperty("password"));
         click(loginButton);
-
-        // --- KRİTİK ALERT YÖNETİMİ ---
-        // Demoblaze bazen "Wrong password" veya "User does not exist" uyarısı verir.
-        // Eğer bir alert çıkarsa onu kabul edip (OK) yolumuza devam etmeliyiz.
-        try {
-            // 2 saniye boyunca bir alert çıkıp çıkmadığını kontrol et
-            wait.until(ExpectedConditions.alertIsPresent());
-            Alert alert = driver.switchTo().alert();
-            System.out.println("🚨 Siteden bir uyarı mesajı geldi: " + alert.getText());
-            alert.accept(); // Alert'teki 'Tamam' butonuna basar
-        } catch (Exception e) {
-            // Alert çıkmazsa (yani login başarılıysa) sessizce devam eder
-        }
     }
 }

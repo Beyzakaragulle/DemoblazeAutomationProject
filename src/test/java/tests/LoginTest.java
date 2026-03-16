@@ -1,47 +1,55 @@
 package tests;
 
+import org.testng.Assert;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import pages.HomePage;
 import pages.LoginPage;
-import java.util.HashMap;
-import java.util.Map;
+import utilities.ConfigReader;
+import utilities.Driver;
 
-public class LoginTest extends TestBase {
+public class LoginTest {
 
-    @Test
-    public void loginWithMapTest() {
-        HomePage homePage = new HomePage(driver);
-        LoginPage loginPage = new LoginPage(driver);
+    // Sayfa nesnelerini sınıf seviyesinde tanımlıyoruz
+    LoginPage loginPage;
+    HomePage homePage;
 
-        // MAP KULLANIMI: Test verilerini anahtar-değer olarak tutuyoruz
-        Map<String, String> testData = new HashMap<>();
-        testData.put("user", "beyzatest"); // NOT: Sitede bu isimle kayıt olduğundan emin ol!
-        testData.put("pass", "12345");
-        testData.put("expected", "Welcome beyzatest");
+    @BeforeMethod
+    public void setUp() {
+        // 1. Tarayıcıyı aç ve URL'e git (Veriyi Config'den alıyoruz)
+        Driver.getDriver().get(ConfigReader.getProperty("url"));
 
-        homePage.clickLogin();
-        loginPage.login(testData.get("user"), testData.get("pass"));
-
-        // DOĞRULAMA (Assertion)
-        String actualMessage = homePage.getText(homePage.welcomeMessage);
-        org.testng.Assert.assertEquals(actualMessage, testData.get("expected"), "Login sonrası mesaj yanlış!");
+        // 2. Sayfa nesnelerini initialize et
+        loginPage = new LoginPage();
+        homePage = new HomePage();
     }
 
-    @Test
-    public void streamsIleUrunKontrolu() {
-        HomePage homePage = new HomePage(driver);
+    @Test(priority = 1, description = "Geçerli kullanıcı bilgileriyle başarılı giriş testi")
+    public void validLoginTest() {
+        // loginAction metodu kendi içinde ConfigReader kullanarak verileri çeker
+        loginPage.loginAction();
 
-        // STREAMS & LAMBDA KULLANIMI: Ürünleri tek satırda filtrele ve say
-        long urunSayisi = homePage.allProductTitles.stream()
-                .map(el -> el.getText())
-                .filter(txt -> !txt.isEmpty())
-                .count();
+        // Assertion: Welcome mesajının doğru kullanıcı adını içerdiğini doğrula
+        String expectedMessage = "Welcome " + ConfigReader.getProperty("username");
+        String actualMessage = homePage.getWelcomeMessageText();
 
-        System.out.println("Sitedeki toplam ürün sayısı: " + urunSayisi);
+        Assert.assertEquals(actualMessage, expectedMessage, "Login sonrası karşılama mesajı eşleşmedi!");
+    }
 
-        // Ürün listesini konsola Lambda ile yazdır
-        homePage.allProductTitles.stream()
-                .map(el -> el.getText())
-                .forEach(name -> System.out.println("📦 Ürün: " + name));
+    @Test(priority = 2, description = "Ürün listesinde Samsung Galaxy S6 var mı kontrolü")
+    public void productCheckTest() {
+        loginPage.loginAction();
+
+        // Java Streams kullanan metodumuzu çağırıyoruz
+        boolean isProductVisible = homePage.isProductAvailable("Samsung galaxy s6");
+
+        Assert.assertTrue(isProductVisible, "Aranan ürün ana sayfada görüntülenemedi!");
+    }
+
+    @AfterMethod
+    public void tearDown() {
+        // Her testten sonra tarayıcıyı kapat ve tertemiz bir sonraki teste geç
+        Driver.closeDriver();
     }
 }

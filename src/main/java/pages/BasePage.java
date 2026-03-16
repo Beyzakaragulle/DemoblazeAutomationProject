@@ -1,38 +1,42 @@
 package pages;
 
-import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.PageFactory;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import utilities.Driver;
+
 import java.time.Duration;
 
 public abstract class BasePage {
-    protected WebDriver driver;
+
     protected WebDriverWait wait;
 
-    public BasePage(WebDriver driver) {
-        this.driver = driver;
-        this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-        PageFactory.initElements(driver, this);
+    public BasePage() {
+        // PageFactory: @FindBy notasyonlarını aktive eder
+        //PageFactory.initElements(Driver.getDriver(), this);
+        this.wait = new WebDriverWait(Driver.getDriver(), Duration.ofSeconds(10));
     }
 
-    public void click(WebElement element) {
-        wait.until(ExpectedConditions.elementToBeClickable(element)).click();
+    // Ortak metod: Tıklama
+    protected void click(By locator) {
+        wait.until(ExpectedConditions.elementToBeClickable(locator)).click();
     }
 
-    public void sendKeys(WebElement element, String text) {
-        wait.until(ExpectedConditions.visibilityOf(element)).clear();
+    // Ortak metod: Yazı gönderme
+    protected void sendKeys(By locator, String text) {
+        WebElement element = wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
+        element.clear();
         element.sendKeys(text);
     }
 
-
-    public String getText(WebElement element) {
-        try {
-            wait.until(d -> element.isDisplayed() && !element.getText().trim().isEmpty());
-            return element.getText();
-        } catch (Exception e) {
-            throw new AutomationException("🚨 HATA: Yazı okunamadı veya element bulunamadı!");
-        }
+    //
+    public void acceptAlert() {
+        Driver.getDriver().switchTo().alert().accept();
+    }
+    // Ortak metod: Yazı alma
+    protected String getText(By locator) {
+        return wait.until(ExpectedConditions.visibilityOfElementLocated(locator)).getText();
     }
 }
